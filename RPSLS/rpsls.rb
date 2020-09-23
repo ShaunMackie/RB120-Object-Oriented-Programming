@@ -13,10 +13,6 @@ module Formatable
   def clear
     system('clear') || system('cls')
   end
-
-  def line_break
-    puts "\n"
-  end
 end
 
 class Move
@@ -25,6 +21,12 @@ class Move
              's' => 'scissors',
              'l' => 'lizard',
              'o' => 'spock' }
+
+  VALUE_INTERACTIONS = { 'rock' => ['scissors', 'lizard'],
+                         'paper' => ['spock', 'rock'],
+                         'scissors' => ['paper', 'lizard'],
+                         'lizard' => ['spock', 'paper'],
+                         'spock' => ['rock', 'scissors'] }
 
   def initialize(value)
     @value = value
@@ -51,11 +53,7 @@ class Move
   end
 
   def >(other_move)
-    (rock? && (other_move.scissors? || other_move.lizard?)) ||
-      (paper? && (other_move.rock? || other_move.spock?)) ||
-      (scissors? && (other_move.paper? || other_move.lizard?)) ||
-      (lizard? && (other_move.paper? || other_move.spock?)) ||
-      (spock? && (other_move.rock? || other_move.scissors?))
+    VALUE_INTERACTIONS[@value].include?(other_move.to_s)
   end
 
   def to_s
@@ -107,8 +105,8 @@ class Computer < Player
   FRANKENSTEIN_VALUES = { 'r' => 'rock',
                           'p' => 'paper',
                           's' => 'scissors',
-                          'l' => ['lizard', 'lizard', 'rock'].sample,
-                          'o' => ['rock', 'rock', 'lizard', 'lizard'].sample }
+                          'l' => ['lizard', 'lizard', 'rock', 'rock'].sample,
+                          'o' => ['rock', 'rock', 'paper', 'paper'].sample }
 
   def set_name
     self.name = ['Dracula', 'Frankenstein', 'The Mummy', 'Werewolf'].sample
@@ -126,7 +124,7 @@ class Computer < Player
   end
 end
 
-class RPSGame
+class RPSLSGame
   include Formatable
   attr_reader :human, :computer, :human_history, :computer_history
 
@@ -135,6 +133,10 @@ class RPSGame
     @computer = Computer.new
     @human_history = []
     @computer_history = []
+  end
+
+  def line_break
+    puts "\n"
   end
 
   def display_welcome_message
@@ -153,14 +155,16 @@ class RPSGame
     puts prompt("#{computer.name} chose #{computer.move}.")
   end
 
-  def display_winner
-    if human.move > computer.move
-      puts prompt("#{human.name} won!")
-    elsif computer.move > human.move
-      puts prompt("#{computer.name} won!")
-    else
-      puts prompt("It's a tie!")
-    end
+  def determine_winner
+    return 'human' if human.move > computer.move
+    return 'computer' if computer.move > human.move
+    'tie'
+  end
+
+  def display_winner(winner)
+    puts prompt("#{human.name} won!") if winner == 'human'
+    puts prompt("#{computer.name} won!") if winner == 'computer'
+    puts prompt("It's a tie!") if winner == 'tie'
   end
 
   def save_moves
@@ -178,12 +182,6 @@ class RPSGame
     line_break
   end
 
-  def winner
-    winner = "human" if human.move > computer.move
-    winner = "computer" if computer.move > human.move
-    winner
-  end
-
   def keep_score(winner)
     if winner == "human"
       human.score += 1
@@ -198,13 +196,13 @@ class RPSGame
   end
 
   def grand_winner?
-    human.score == 2 || computer.score == 2
+    human.score == 3 || computer.score == 3
   end
 
   def declare_grand_winner
-    if human.score == 2
+    if human.score == 3
       puts prompt("Congratulations! You are the Grand Winner!")
-    elsif computer.score == 2
+    elsif computer.score == 3
       puts prompt("The match is over! #{computer.name} is the Grand Winner!")
     end
   end
@@ -212,6 +210,7 @@ class RPSGame
   def continue_playing?(message)
     answer = nil
     loop do
+      return false if grand_winner?
       puts messages(message)
       answer = gets.chomp.downcase
       break if %w(y yes q quit).include?(answer)
@@ -220,8 +219,6 @@ class RPSGame
     end
     clear
     return true if answer == 'y' || answer == 'yes'
-
-    false
   end
 
   def reset_score
@@ -234,8 +231,9 @@ class RPSGame
     @computer_history = []
   end
 
-  def break_condition
-    human.score < 2 && computer.score < 2
+  def reset_game
+    reset_move_history
+    reset_score
   end
 
   def make_choices
@@ -244,45 +242,38 @@ class RPSGame
     clear
   end
 
-  def reset_game
-    reset_move_history
-    reset_score
-  end
-
   def display_histories
     display_history(human, human_history)
     display_history(computer, computer_history)
   end
 
-  def display_score
-    keep_score(winner)
+  def display_results
+    display_moves
+    display_winner(determine_winner)
     display_current_score
   end
 
-  def game_loop
+  def gameplay_inner_loop
     loop do
-      until grand_winner?
-        make_choices
-        display_moves
-        display_winner
-        save_moves
-        display_score
-        if break_condition
-          break unless continue_playing?('continue?')
-        end
-      end
-      declare_grand_winner
-      display_histories
-      reset_game
-      break unless continue_playing?('play_again?')
+      make_choices
+      keep_score(determine_winner)
+      display_results
+      save_moves
+      break unless continue_playing?('continue?')
     end
   end
 
   def play
     display_welcome_message
-    game_loop
+    loop do
+      gameplay_inner_loop
+      declare_grand_winner
+      display_histories
+      reset_game
+      break unless continue_playing?('play_again?')
+    end
     display_goodbye_message
   end
 end
 
-RPSGame.new.play
+RPSLSGame.new.play
