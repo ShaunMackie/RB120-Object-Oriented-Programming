@@ -73,19 +73,6 @@ end
 class Human < Player
   include Formatable
 
-  def set_name
-    n = ''
-    clear
-    puts messages('name')
-    loop do
-      n = gets.chomp
-      break unless n.empty?
-      clear
-      puts messages('invalid_input')
-    end
-    self.name = n
-  end
-
   def choose
     choice = nil
     loop do
@@ -99,6 +86,21 @@ class Human < Player
   end
 end
 
+private
+
+def set_name
+  n = ''
+  clear
+  puts messages('name')
+  loop do
+    n = gets.chomp
+    break unless n.empty? || (n.gsub(' ', '') != n)
+    clear
+    puts messages('invalid_input')
+  end
+  self.name = n
+end
+
 class Computer < Player
   DRACULA_VALUES = { 'r' => 'rock' }
 
@@ -107,10 +109,6 @@ class Computer < Player
                           's' => 'scissors',
                           'l' => ['lizard', 'lizard', 'rock', 'rock'].sample,
                           'o' => ['rock', 'rock', 'paper', 'paper'].sample }
-
-  def set_name
-    self.name = ['Dracula', 'Frankenstein', 'The Mummy', 'Werewolf'].sample
-  end
 
   def choose
     self.move = case name
@@ -122,10 +120,33 @@ class Computer < Player
                   Move.new(Move::VALUES.values.sample)
                 end
   end
+
+  private
+
+  def set_name
+    self.name = ['Dracula', 'Frankenstein', 'The Mummy', 'Werewolf'].sample
+  end
 end
 
 class RPSLSGame
   include Formatable
+
+  def play
+    display_welcome_message
+    loop do
+      play_full_round
+      declare_grand_winner
+      display_histories
+      reset_game
+      break unless continue_playing?('play_again?')
+    end
+    display_goodbye_message
+  end
+
+  private
+
+  TOTAL_WINS = 3
+
   attr_reader :human, :computer, :human_history, :computer_history
 
   def initialize
@@ -143,7 +164,7 @@ class RPSLSGame
     clear
     puts prompt("Hello, #{human.name}!")
     puts messages('welcome')
-    puts messages('rules')
+    puts prompt("The first player to score #{TOTAL_WINS} points wins the game!")
   end
 
   def display_goodbye_message
@@ -196,13 +217,13 @@ class RPSLSGame
   end
 
   def grand_winner?
-    human.score == 3 || computer.score == 3
+    human.score == TOTAL_WINS || computer.score == TOTAL_WINS
   end
 
   def declare_grand_winner
-    if human.score == 3
+    if human.score == TOTAL_WINS
       puts prompt("Congratulations! You are the Grand Winner!")
-    elsif computer.score == 3
+    elsif computer.score == TOTAL_WINS
       puts prompt("The match is over! #{computer.name} is the Grand Winner!")
     end
   end
@@ -218,7 +239,7 @@ class RPSLSGame
       puts messages('invalid_choice')
     end
     clear
-    return true if answer == 'y' || answer == 'yes'
+    %w(y yes).include?(answer)
   end
 
   def reset_score
@@ -253,7 +274,7 @@ class RPSLSGame
     display_current_score
   end
 
-  def gameplay_inner_loop
+  def play_full_round
     loop do
       make_choices
       keep_score(determine_winner)
@@ -261,18 +282,6 @@ class RPSLSGame
       save_moves
       break unless continue_playing?('continue?')
     end
-  end
-
-  def play
-    display_welcome_message
-    loop do
-      gameplay_inner_loop
-      declare_grand_winner
-      display_histories
-      reset_game
-      break unless continue_playing?('play_again?')
-    end
-    display_goodbye_message
   end
 end
 

@@ -1,6 +1,5 @@
 name: "Hello there...What's your name?"
 welcome: "Welcome to Rock, Paper, Scissors, Lizard, Spock!"
-rules: "The first player to score three(3) points wins the game!"
 choices: "MAKE YOUR CHOICE:\n\n r - rock\n p - paper\n s - scissors\n l - lizard\n o - spock"
 invalid_choice: "Silly Rabbit! That's not a valid choice."
 play_again?: "Would you like to begin a brand new match? (Enter Y/Yes to play again. Enter Q/Quit to quit.)"
