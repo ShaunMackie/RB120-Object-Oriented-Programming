@@ -1,0 +1,13 @@
+name: "Good day to you! By what name would you like to be called?"
+rules: "The first player to score three points wins the match!"
+invalid_choice: "Why, I never! That is not a valid choice!"
+another_round?: "Would you like to begin a brand new match? (Enter Y/Yes to play again. Enter N/No to exit the program.)"
+invalid_name_input: "Are you trying to pull the wool over my eyes? Your tricks will not work here. Please enter your true name: "
+exit_message: 'Thank you for playing Tic Tac Toe. Come play again soon!'
+continue?: "Would you like to continue the match? (Enter Y/Yes to continue playing. Enter N/No to give up.)"
+tie: "Would ya look at that! It's a tie!"
+play_again: "Okay! The battle continues!"
+victor: "Congratulations! You are the victor for this round!"
+choose_marker: "Please choose your marker: (You can choose any letter from A to Z)"
+choose_first_to_act: "Before we begin, you must decide who will go first:"
+go_first: "Enter 'A' if you would like to go first. Enter 'B' if you would like to defer to your opponent."
