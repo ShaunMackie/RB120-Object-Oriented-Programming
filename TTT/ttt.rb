@@ -72,26 +72,30 @@ class Board
   end
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
-
   def []=(num, marker)
     @squares[num].marker = marker
+  end  
+  
+  def [](num)
+    @squares[num].marker
   end
 
-  def find_at_risk_square
+  def find_at_risk_square(marker)
     WINNING_LINES.each do |line|
       squares = @squares.values_at(*line)
-      if two_identical_markers?(squares)
+      if two_identical_markers?(squares, marker)
         return line
       end
     end
+    nil
   end
 
   private
 
-  def two_identical_markers?(squares)
+  def two_identical_markers?(squares, marker)
     markers = squares.select(&:marked?).collect(&:marker)
     return false if markers.size != 2 && !markers.uniq.empty?
-    markers.uniq.size == 1
+    markers.all? {|m| m == marker} && !markers.empty?
   end
 
   def three_identical_markers?(squares)
@@ -325,18 +329,33 @@ class TTTGame
   def defend_at_risk_square
     return unless board.find_at_risk_square.size == 2
     board[board.find_at_risk_square] << computer.marker
-  end
-
+  end 
+  
   def computer_moves
-    if board.find_at_risk_square.size == 3
-      board[board.find_at_risk_square.select do |e|
-        !board.marked_keys.include?(e)
-      end [0]] = computer.marker
-    elsif board.unmarked_keys.include?(CENTER)
-      board[CENTER] = computer.marker
-    else
-      board[board.unmarked_keys.sample] = computer.marker
+    square = computer_offensive_move ||
+             computer_defensive_move ||
+             middle_move || board.unmarked_keys.sample
+    board[square] = computer.marker
+  end   
+  
+  def computer_offensive_move
+    square = board.find_at_risk_square(computer.marker)
+    if square
+      square = square.select {|number| board[number] == Square::INITIAL_MARKER}.first
     end
+    square
+  end   
+  
+  def computer_defensive_move
+    square = board.find_at_risk_square(human.marker)
+    if square
+      square = square.select {|number| board[number] == Square::INITIAL_MARKER}.first
+    end
+    square
+  end   
+  
+  def middle_move
+    board[CENTER] == Square::INITIAL_MARKER ? 5 : nil
   end
 
   def display_result
@@ -380,7 +399,6 @@ class TTTGame
       human_moves
       @current_marker = computer.marker
     else
-      defend_at_risk_square
       computer_moves
       @current_marker = human.marker
     end
